@@ -1,0 +1,28 @@
+<RCC>
+  <qresource prefix="/">
+  <!--
+    <file>../ui/PathEditor.qml</file>
+    <file>../ui/Scrollable.qml</file>
+    <file>../ui/ScrollBar.qml</file>
+    <file>../ui/ApiBrowser.qml</file>
+    <file>../ui/Root.qml</file>
+    <file>../ui/main.js</file>
+    <file>../ui/pics/plus-sign.png</file>
+    <file>../ui/pics/minus-sign.png</file>
+  -->
+  </qresource>
+  <qresource prefix="/svgpieces">
+    <file>../ui/svgpieces/Chess_klt45.svg</file>
+    <file>../ui/svgpieces/Chess_kdt45.svg</file>
+    <file>../ui/svgpieces/Chess_qlt45.svg</file>
+    <file>../ui/svgpieces/Chess_qdt45.svg</file>
+    <file>../ui/svgpieces/Chess_blt45.svg</file>
+    <file>../ui/svgpieces/Chess_bdt45.svg</file>
+    <file>../ui/svgpieces/Chess_nlt45.svg</file>
+    <file>../ui/svgpieces/Chess_ndt45.svg</file>
+    <file>../ui/svgpieces/Chess_rlt45.svg</file>
+    <file>../ui/svgpieces/Chess_rdt45.svg</file>
+    <file>../ui/svgpieces/Chess_plt45.svg</file>
+    <file>../ui/svgpieces/Chess_pdt45.svg</file>
+  </qresource>
+</RCC>

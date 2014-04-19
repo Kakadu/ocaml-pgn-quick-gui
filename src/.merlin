@@ -1,0 +1,5 @@
+PKG lablqml
+PKG pgn
+S .
+B ../_build/src
+#B ../ocaml-pgn/build

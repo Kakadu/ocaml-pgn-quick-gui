@@ -1,0 +1,7 @@
+DataItem_c.o
+Controller_c.o
+AbstractModel_c.o
+
+moc_DataItem_c.o
+moc_Controller_c.o
+moc_AbstractModel_c.o

@@ -1,0 +1,50 @@
+[
+{
+  "classname": "Controller",
+  "methods": [
+      {  "name":      "doE2E4",
+         "signature": ["unit", "unit"] }
+  ],
+  "properties": [
+     { "name":   "hasData",
+       "type":   "bool",
+       "get":    "isHasData",
+       "notify": "hasDataChanged" }
+    ,{ "name":   "movesText",
+       "type":   "string",
+       "get":    "getMovesText",
+       "notify": "movesTextChanged" }
+  ],
+  "slots":   [],
+  "signals": []
+},
+
+{
+    "classname": "AbstractModel",
+    "basename":  "QAbstractItemModel",
+    "methods": [],
+    "properties": [
+    ],
+    "slots": [],
+    "signals": []
+},
+{
+    "classname": "DataItem",
+    "methods": [
+        { "name":      "isWhite",
+          "signature": ["unit", "bool"]
+        }
+    ],
+    "properties": [
+        { "name":   "picture"
+        , "type":   "string"
+        , "get":    "getPicture"
+        , "set":    "setPicture"
+        , "notify": "pictureChanged"
+        }
+    ],
+    "slots": [],
+    "signals": []
+}
+
+]

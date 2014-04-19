@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -x
+#RESOURCE=src/qrc_resources.c
+RESOURCE=
+ocamlbuild -use-ocamlfind \
+    src/moc_DataItem_c.c src/moc_Controller_c.c src/moc_AbstractModel_c.c \
+    $RESOURCE \
+    src/libcppstubs.a \
+    src/program.native -verbose 1

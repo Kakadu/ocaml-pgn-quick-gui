@@ -1,0 +1,19 @@
+<src/*.ml*>: package(lablqml), package(pgn), verbose, rectypes
+<src/*.ml*>: verbose, thread, package(compiler-libs.common), package(str)
+<src/program.native>: use_qt5, package(compiler-libs.common), package(str), package(unix), package(lablqml), package(pgn), use_cppstubs, use_qrc_stub
+
+<src/DataItem_c.c>:      mocml_generated
+<src/Controller_c.c>:    mocml_generated
+<src/AbstractModel_c.c>: mocml_generated
+
+<src/moc_DataItem_c.c>:      qtmoc_generated
+<src/moc_Controller_c.c>:    qtmoc_generated
+<src/moc_AbstractModel_c.c>: qtmoc_generated
+
+<src/Controller_c.h>:    qtmoc
+<src/AbstractModel_c.h>: qtmoc
+<src/DataItem_c.h>:      qtmoc
+
+<src/resources.qrc>:     qt_resource_file
+<src/qrc_resources.c>:   qt_resource_file
+

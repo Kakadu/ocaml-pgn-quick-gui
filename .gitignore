@@ -1,0 +1,31 @@
+.depend
+_build
+camlcode.o.startup.s
+*.cm[aiotx]
+*.o
+qocamlbrowser
+*.native
+*.byte
+# C++
+.moc
+.pch
+.obj
+qrc_*.cpp
+# editor files
+*~
+*.swp
+
+# Generated files:
+AbstractModel_c.cpp
+AbstractModel_c.h
+AbstractModel.ml
+HistoryModel_c.cpp
+HistoryModel_c.h
+HistoryModel.ml
+DataItem_c.cpp
+DataItem_c.h
+DataItem.ml
+Controller_c.cpp
+Controller_c.h
+Controller.ml
+
