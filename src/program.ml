@@ -22,17 +22,23 @@ class type virtual controller_t = object
   method nextMove : unit -> unit
   method prevMove : unit -> unit
   method restartGame : unit -> unit
+  method emit_positionChanged: unit
 end
 
-type id_board_map = (int, string * Types.Board.t * int) Hashtbl.t
+type board_hash_key = string
+type id_board_map = (board_hash_key, string * Types.Board.t * board_hash_key) Hashtbl.t
 
+class type virtual dataItem_t = object
+  inherit DataItem.base_DataItem
+  method update_picture : unit
+end
 type options = {
   mutable controller: controller_t;
   mutable board_model: abstractListModel;
-  cells: DataItem.base_DataItem array;
+  cells: dataItem_t array;
   mutable games : Types.game list;
   mutable curGame: Types.game;
-  mutable cur_position: int;
+  mutable cur_position: board_hash_key;
   mutable boardHash: id_board_map;
 }
 
@@ -43,7 +49,7 @@ let options =
   ; board_model = Obj.magic 1
   ; games = []
   ; curGame = Obj.magic 1
-  ; cur_position = 0
+  ; cur_position = ""
   ; boardHash = Hashtbl.create 64
   }
 
@@ -57,23 +63,21 @@ let index_of_field v h =
   let ans = (int_of_char v - int_of_char 'a') + 8 * (8-h) in
   assert (ans>=0 && ans < 64);
   ans
-(*
-let init_board board =
-  (* 1st cell is a8 *)
-  let set1 (color,sort) n : unit = board.(n) <- `Figure (color,sort) in
-  for i=8 to 8+7 do set1 (Black, `Pawn) i done;
-  for i=48 to 48+7 do set1 (White, `Pawn) i done;
-  List.iter (set1 (Black, `Rook)) [0; 7];
-  List.iter (set1 (Black, `Knight)) [1; 6];
-  List.iter (set1 (Black, `Bishop)) [2; 5];
-  set1 (Black, `Queen) 3;
-  set1 (Black, `King) 4;
-  List.iter (set1 (White, `Knight)) [57; 62];
-  List.iter (set1 (White, `Rook)) [63; 56];
-  List.iter (set1 (White, `Bishop)) [58; 61];
-  set1 (White, `Queen) 59;
-  set1 (White, `King) 60
-  *)
+
+type path_t = [ `Forward of int | `Turn of int ]
+let string_of_path (xs: path_t list) =
+  let b = Buffer.create 100 in
+  List.iter (function
+    | `Forward n -> bprintf b "f%d" n
+    | `Turn n -> bprintf b "t%d" n
+  ) xs;
+  Buffer.contents b
+
+let append_path p ps =
+  match (p,ps) with
+  | `Turn x,_ -> `Turn x :: ps
+  | `Forward, (`Forward x)::xs -> `Forward (x+1) :: xs
+  | _ -> `Forward 1 :: ps
 
 let game_for_qt root : string * id_board_map =
   let html_buf = Buffer.create 100 in
@@ -81,26 +85,44 @@ let game_for_qt root : string * id_board_map =
 
   let initial_board = Board.create () in
   let (>>=) = Option.(>>=) in
-  let rec helper (board: (int * color * Board.t) option) root =
+  let (>|=) = Option.(>|=) in
+  let rec helper (board: (int * color * Board.t) option) path root =
+    let key = string_of_path path in
     let () = match board with
-      | Some (n,White,_) -> bprintf html_buf "%d. " n;
+      | Some (n,White,_board) ->
+        bprintf html_buf "%d. " n;
       | _  -> ()
     in
-    Buffer.add_string html_buf (string_of_move root.move);
-    Buffer.add_string html_buf " ";
-    let init = board >>= fun ((n,_,_) as b) -> Board.make_move root.move b in
-    let f : (int * color * Board.t) option -> _ -> (int * color * Board.t) option =
-      fun acc -> function
-      | `Continue x -> helper acc x   (* TODO *)
-      | `NullMoves _ -> acc
+    let next_path = append_path `Forward path in
+    bprintf html_buf "<a href='%s'>%s</a> " (string_of_path next_path) (string_of_move root.move);
+
+    let init = board >>= Board.make_move root.move >|= fun ((n,_,_board) as b) ->
+      printf "Add to hash %s -> (_,_,%s)\n%!" (string_of_path next_path) (string_of_path path);
+      Hashtbl.add map (string_of_path next_path) ("",_board, string_of_path path);
+      b
     in
-    (match root.next with
-    | `NullMoves _ -> init
-    | `Result _ -> init
-    | `Continue root2 -> helper init root2) >>= fun _ ->
-    List.fold_left ~f ~init:board root.variants
+
+    let f : (int * color * Board.t) option -> varn:int -> _ -> unit =
+      fun acc ~varn -> function
+      | `Continue x -> helper acc (`Turn varn :: path) x
+      | `NullMoves _ -> ()
+    in
+    List.iteri root.variants ~f:(fun varn move ->
+      bprintf html_buf "(";
+      let () = match board with
+        | Some (n,Black,_) -> bprintf html_buf "%d..." n
+        | _ -> ()
+      in
+      f board ~varn move;
+      bprintf html_buf ")"
+    );
+
+    match root.next with
+    | `NullMoves _ -> ()
+    | `Result _ -> ()
+    | `Continue root2 -> helper init next_path root2
   in
-  let _ = helper (Some (1, White, Board.create ())) root in
+  let _ = helper (Some (1, White, Board.create ())) [`Forward 0] root in
   (Buffer.contents html_buf, map)
 
 let main () =
@@ -111,24 +133,25 @@ let main () =
         val mutable pic_ = ""
         method setPicture s =
           if s <> pic_ then ( pic_ <- s;
-                              printf "Setting picture = `%s` on index `%d`\n%!" s n;
+                              (*printf "Setting picture = `%s` on index `%d`\n%!" s n;*)
                               self#emit_pictureChanged s )
         method getPicture () =
           (* N.B. While changing array we should send events about changing *)
           let (_,curBoard,_) = Hashtbl.find options.boardHash options.cur_position in
-          match Types.Board.get_celli_value curBoard (n mod 8, n/8) with
+          match Types.Board.get_celli_value curBoard ((n mod 8), 7-(n/8)) with
           | None -> ""
           | Some (color,fig) -> getPicture (color, fig)
 
         method isWhite () =
           if n mod 16 >= 8 then (n mod 2 <> 0)
           else (n mod 2 = 0)
+        method update_picture = self#setPicture (self#getPicture ())
     end in
     options.cells.(n) <- o;
   done
   in
 
-  Hashtbl.add options.boardHash 0 ("init",Types.Board.create (), 0);
+  Hashtbl.add options.boardHash "" ("init",Types.Board.create (), "");
 
   let cpp_model = AbstractModel.create_AbstractModel () in
   let myDefaultRoleMainModel = 555 in
@@ -138,6 +161,7 @@ let main () =
     inherit abstractListModel cpp_model as super
     method rowCount _ = 64
     method data index role =
+
       let n = QModelIndex.row index in
       if (n<0 || n>= 64) then QVariant.empty
       else begin
@@ -145,6 +169,10 @@ let main () =
         then QVariant.of_object (options.cells.(n))#handler
         else QVariant.empty
       end
+
+    method emit_all =
+      self#report_dataChanged (QModelIndex.make ~row:0 ~column:0) (QModelIndex.make ~row:7 ~column:7);
+      for i=0 to 63 do options.cells.(i)#update_picture done
   end
   in
 
@@ -158,6 +186,13 @@ let main () =
     method setMovesText v =
       if v<> moves_text then (moves_text <- v; self#emit_movesTextChanged v)
 
+    method moveSelected key =
+      printf "moveSelected %s\n" key;
+      (*print_endline @@ Hashtbl.string_of_keys (fun x -> x) options.boardHash;*)
+      options.cur_position <- key;
+      model#emit_all;
+      ()
+
     method doE2E4 () =
       print_endline "e2e4"; (*
       let from = index_of_field 'e' 2
@@ -166,6 +201,7 @@ let main () =
       (options.cells.(dest))#setPicture (getPicture White `Pawn); *)
       ()
 
+    method emit_positionChanged = model#emit_all
     method restartGame () = ()
     method nextMove () = ()
     method prevMove () = ()
@@ -175,11 +211,12 @@ let main () =
   set_context_property ~ctx:(get_view_exn ~name:"rootContext") ~name:"controller" controller#handler;
   set_context_property ~ctx:(get_view_exn ~name:"rootContext") ~name:"boardModel" model#handler;
 
-  let data = Pgn.parse_file "game.pgn" |> Types.Option.get_exn |> List.hd_exn |> snd in
+  let filename = List.nth ~n:1 ["game.pgn"; "ChigorinSteinitz.pgn"] in
+  let data = Pgn.parse_file filename |> Types.Option.get_exn |> List.hd_exn |> snd in
   print_endline "File parsed!";
-  let (text,_) = game_for_qt data in
+  let (text,map) = game_for_qt data in
+  Hashtbl.merge options.boardHash map;
   print_endline text;
-  print_endline "Setting text";
   options.controller#setMovesText text;
   ()
 

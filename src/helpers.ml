@@ -96,3 +96,13 @@ module Buffer = struct
 end
 
 
+module Hashtbl = struct
+  include Hashtbl
+  (* add values from t2 to t1 *)
+  let merge ~dest h2 = iter (add dest) h2
+
+  let string_of_keys tostr h =
+    let b = Buffer.create 40 in
+    iter (fun k _ -> bprintf b "%s " (tostr k)) h;
+    Buffer.contents b
+end

@@ -3,7 +3,9 @@
   "classname": "Controller",
   "methods": [
       {  "name":      "doE2E4",
-         "signature": ["unit", "unit"] }
+         "signature": ["unit", "unit"] },
+      {  "name":      "moveSelected",
+         "signature": ["string", "unit"] }
   ],
   "properties": [
      { "name":   "hasData",

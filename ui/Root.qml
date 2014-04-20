@@ -113,9 +113,8 @@ ApplicationWindow {
             textFormat: TextEdit.RichText
             wrapMode: TextEdit.WordWrap
 
-            onLinkActivated: controller.linkActivated(link)
+            onLinkActivated: controller.moveSelected(link);
             text: {
-
                 if (controller.hasData) controller.movesText
                 else ""
             }
